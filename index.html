@@ -405,7 +405,7 @@ function calculate() {
   const subtotal = recipients * POSTAGE_CENTS;
   const total = subtotal + PRELIM_CENTS;
 
-  el('out-parties').textContent = parties.toLocaleString();
+  el('out-recipients').textContent = recipients.toLocaleString();
   el('out-postage').textContent = usd(POSTAGE_CENTS);
   el('out-subtotal').textContent = usd(subtotal);
   el('out-prelim').textContent = usd(PRELIM_CENTS);
