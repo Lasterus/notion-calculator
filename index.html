@@ -122,49 +122,16 @@ body{
   background:var(--paper);
 }
 
+.hint{
+  font:400 11px/1.4 "IBM Plex Mono",ui-monospace,monospace;
+  color:var(--slate);
+  margin:7px 0 0;
+}
+
 .field input:focus{
   outline:none;
   border-color:var(--seal);
   box-shadow:0 0 0 3px var(--seal-tint);
-}
-
-/* ---------- permutation grid (signature) ---------- */
-
-.matrix{padding:22px 0;border-bottom:1px solid var(--rule)}
-
-.matrix-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:baseline;
-  gap:12px;
-  margin-bottom:14px;
-}
-
-.matrix-note{
-  font:400 11px/1.5 "IBM Plex Mono",ui-monospace,monospace;
-  color:var(--slate);
-  text-align:right;
-}
-
-.grid{display:flex;flex-direction:column;gap:5px}
-
-.grid-row{display:flex;flex-wrap:wrap;gap:5px}
-
-.cell{
-  display:flex;
-  gap:3px;
-  align-items:center;
-  padding:5px 6px;
-  background:var(--seal-tint);
-  border-radius:2px;
-}
-
-.cell i{
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:var(--seal);
-  display:block;
 }
 
 /* ---------- results ledger ---------- */
@@ -297,23 +264,17 @@ body{
       <div class="inputs">
         <div class="field">
           <label for="owners">Number of owners</label>
-          <input id="owners" type="number" min="0" step="1" value="1" inputmode="numeric">
+          <input id="owners" type="number" min="1" step="1" value="1" inputmode="numeric">
         </div>
         <div class="field">
           <label for="lenders">Number of lenders</label>
           <input id="lenders" type="number" min="0" step="1" value="5" inputmode="numeric">
+          <p class="hint">Enter 0 if there is no lender.</p>
         </div>
-      </div>
-
-      <div class="matrix">
-        <div class="matrix-head">
-          <p class="eyebrow" style="margin:0">Permutations</p>
-          <p class="matrix-note" id="matrix-note"></p>
-        </div>
-        <div class="grid" id="grid" aria-hidden="true"></div>
       </div>
 
       <ul class="ledger">
+        <li><span class="k">Parties served, per permutation</span><span class="dots"></span><span class="v" id="out-parties">—</span></li>
         <li><span class="k">Total recipients</span><span class="dots"></span><span class="v" id="out-recipients">—</span></li>
         <li><span class="k">Postage rate, each</span><span class="dots"></span><span class="v" id="out-postage">—</span></li>
         <li><span class="k">Postage subtotal</span><span class="dots"></span><span class="v" id="out-subtotal">—</span></li>
@@ -362,9 +323,9 @@ const CONFIG = {
   // Rates tab and the math both follow whatever is listed here.
   postage: {
     "Metered letter":  0.78,
-    "Certified mail":  5.55,
-    "Return receipt":  2.91,
-    "Handling":        0.50
+    "Certified mail":  4.85,
+    "Return receipt":  3.65,
+    "Handling":        0.46
   },
 
   // Flat charge added once per order, regardless of recipient count.
@@ -386,8 +347,6 @@ const usd = c => "$" + (c / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","
 const POSTAGE_CENTS = Object.values(CONFIG.postage).reduce((sum, d) => sum + cents(d), 0);
 const PRELIM_CENTS = cents(CONFIG.prelimCost);
 const PARTIES = CONFIG.partiesPerPermutation;
-
-const MAX_CELLS = 72; // above this the permutation grid is summarized instead of drawn
 
 const el = id => document.getElementById(id);
 
@@ -427,57 +386,32 @@ function renderRates() {
   el('rate-prelim').textContent = usd(PRELIM_CENTS);
 }
 
-/* ---------- permutation grid ---------- */
-
-function renderGrid(owners, lenders, permutations) {
-  const grid = el('grid');
-  const note = el('matrix-note');
-
-  if (permutations === 0) {
-    grid.innerHTML = '';
-    note.textContent = 'Enter at least one owner and one lender.';
-    return;
-  }
-
-  note.innerHTML = `${owners} owner${owners === 1 ? '' : 's'} &times; ${lenders} lender${lenders === 1 ? '' : 's'}
-    = ${permutations} permutation${permutations === 1 ? '' : 's'}<br>
-    &times; ${PARTIES} parties each`;
-
-  if (permutations > MAX_CELLS) {
-    grid.innerHTML = '';
-    return;
-  }
-
-  const cell = '<div class="cell">' + '<i></i>'.repeat(PARTIES) + '</div>';
-  grid.innerHTML = Array.from({ length: owners },
-    () => `<div class="grid-row">${cell.repeat(lenders)}</div>`
-  ).join('');
-}
-
 /* ---------- calculate ---------- */
 
-function clean(input) {
+function clean(input, floor) {
   const n = Math.floor(Number(input.value));
-  return Number.isFinite(n) && n > 0 ? n : 0;
+  return Number.isFinite(n) && n > floor ? n : floor;
 }
 
 function calculate() {
-  const owners = clean(el('owners'));
-  const lenders = clean(el('lenders'));
+  const owners = clean(el('owners'), 1);   // always at least one owner
+  const lenders = clean(el('lenders'), 0); // no lender is a valid case
 
-  const permutations = owners * lenders;
-  const recipients = permutations * PARTIES;
+  // With no lender there is nothing to pair an owner with, so each owner
+  // stands as its own permutation and one of the served parties drops off.
+  const permutations = lenders === 0 ? owners : owners * lenders;
+  const parties = lenders === 0 ? PARTIES - 1 : PARTIES;
+  const recipients = permutations * parties;
 
   const subtotal = recipients * POSTAGE_CENTS;
   const total = subtotal + PRELIM_CENTS;
 
+  el('out-parties').textContent = parties.toLocaleString();
   el('out-recipients').textContent = recipients.toLocaleString();
   el('out-postage').textContent = usd(POSTAGE_CENTS);
   el('out-subtotal').textContent = usd(subtotal);
   el('out-prelim').textContent = usd(PRELIM_CENTS);
   el('out-total').textContent = usd(total);
-
-  renderGrid(owners, lenders, permutations);
 }
 
 ['owners', 'lenders'].forEach(id => el(id).addEventListener('input', calculate));
