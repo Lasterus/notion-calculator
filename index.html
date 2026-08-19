@@ -20,7 +20,7 @@
   --paper:#F7F7F4;
   --card:#FFFFFF;
   --rule:#DCDCD3;
-  --seal:#17564A;
+  --seal:#2DC86E;
   --seal-tint:#E7EFEB;
 }
 
@@ -44,7 +44,7 @@ body{
 
 .tabs{
   display:flex;
-  gap:2px;
+  gap:-1px;
   margin-bottom:-1px;
   position:relative;
   z-index:2;
@@ -68,7 +68,7 @@ body{
 
 .tab[aria-selected="true"]{
   background:var(--card);
-  color:var(--seal);
+  color:var(--ink);
   border-bottom-color:var(--card);
 }
 
@@ -92,7 +92,7 @@ body{
   letter-spacing:.16em;
   text-transform:uppercase;
   color:var(--slate);
-  margin:0 0 14px;
+  margin:140 0 14px;
 }
 
 /* ---------- inputs ---------- */
@@ -101,8 +101,7 @@ body{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:14px;
-  padding-bottom:22px;
-  border-bottom:1px solid var(--rule);
+  padding-bottom:6px;
 }
 
 .field label{
@@ -120,6 +119,12 @@ body{
   border:1px solid var(--rule);
   border-radius:3px;
   background:var(--paper);
+}
+
+.field input::-webkit-inner-spin-button{
+  opacity:1;              /* default is 0 until hover/focus */
+  height:26px;            /* the spinner collapses without a height */
+  cursor:pointer;
 }
 
 .hint{
@@ -159,6 +164,20 @@ body{
   white-space:nowrap;
 }
 
+.ledger li.finalline{
+	display:flex;
+	align-items:baseline;
+	gap:10px;
+	padding:9px 0;
+	border-bottom:none;
+-}
+
+.ledger li.finalline .k{
+  color:var(--slate);
+  font-weight:700;
+  font-size:14px;
+}
+	
 .ledger li.total{
   border-bottom:none;
   border-top:2px solid var(--ink);
@@ -197,6 +216,8 @@ body{
   font-variant-numeric:tabular-nums;
 }
 
+.rates li:nth-last-child(2){border-bottom:none}
+
 .rates li.sum{
   border-bottom:none;
   border-top:2px solid var(--ink);
@@ -208,29 +229,9 @@ body{
 .rates li.sum .v{font-weight:600;color:var(--seal)}
 
 .rates-split{
-  margin-top:26px;
-  padding-top:20px;
-  border-top:1px solid var(--rule);
-}
-
-.howto{
-  font-size:13px;
-  line-height:1.6;
-  color:var(--slate);
-  margin:22px 0 0;
-  padding:14px 16px;
-  background:var(--paper);
-  border-left:2px solid var(--seal);
-  border-radius:0 3px 3px 0;
-}
-
-.howto code{
-  font:500 12px/1 "IBM Plex Mono",ui-monospace,monospace;
-  background:#fff;
-  border:1px solid var(--rule);
-  border-radius:2px;
-  padding:2px 5px;
-  color:var(--ink);
+  margin-top:20px;
+  padding-top:15px;
+  border-top:0px solid var(--rule);
 }
 
 @media (max-width:480px){
@@ -259,7 +260,7 @@ body{
     <!-- ===== CALCULATE ===== -->
     <section class="panel" id="panel-calc" role="tabpanel" aria-labelledby="tab-calc">
 
-      <p class="eyebrow">Parties served</p>
+      <p class="eyebrow">Enter number of parties</p>
 
       <div class="inputs">
         <div class="field">
@@ -269,7 +270,6 @@ body{
         <div class="field">
           <label for="lenders">Number of lenders</label>
           <input id="lenders" type="number" min="0" step="1" value="1" inputmode="numeric">
-          <p class="hint">Enter 0 if there is no lender.</p>
         </div>
       </div>
 
@@ -277,7 +277,7 @@ body{
         <li><span class="k">Total recipients</span><span class="dots"></span><span class="v" id="out-recipients">—</span></li>
         <li><span class="k">Postage rate, each</span><span class="dots"></span><span class="v" id="out-postage">—</span></li>
         <li><span class="k">Postage subtotal</span><span class="dots"></span><span class="v" id="out-subtotal">—</span></li>
-        <li><span class="k">Prelim cost</span><span class="dots"></span><span class="v" id="out-prelim">—</span></li>
+        <li class="finalline"><span class="k">Prelim cost</span><span class="dots"></span><span class="v" id="out-prelim">—</span></li>
         <li class="total"><span class="k">Total cost for service</span><span class="dots"></span><span class="v" id="out-total">—</span></li>
       </ul>
 
@@ -285,23 +285,19 @@ body{
 
     <!-- ===== RATES ===== -->
     <section class="panel" id="panel-rates" role="tabpanel" aria-labelledby="tab-rates" hidden>
+	
+     <p class="eyebrow">Updated: 8/19/2026</p>
+        <ul class="rates">
+          <li><span class="k">Prelim cost</span><span class="v" id="rate-prelim">—</span></li>
+        </ul>
+		<div class="rates-split"></div>
 
       <p class="eyebrow">Postage rate, per recipient</p>
 
       <ul class="rates" id="rates-list"></ul>
 
-      <div class="rates-split">
-        <p class="eyebrow">Flat charge, per order</p>
-        <ul class="rates">
-          <li><span class="k">Prelim cost</span><span class="v" id="rate-prelim">—</span></li>
-        </ul>
-      </div>
 
-      <p class="howto">
-        These figures are fixed. To change them, edit the <code>CONFIG</code> object near
-        the bottom of <code>index.html</code> and commit the change — the calculator picks
-        up the new numbers on the next page load.
-      </p>
+
 
     </section>
 
